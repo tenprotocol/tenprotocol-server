@@ -1,0 +1,259 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "tenprotocol-server: Threat Exposure Notification",
+    "version": "1.0",
+    "contact": {
+      "name": "Switchbit",
+      "url": "https://www.switchbit.com/",
+      "email": "api@switchbit.com"
+    }
+  },
+  "host": "cdn.b10s.io",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/tenp/fetch": {
+      "post": {
+        "operationId": "Fetch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tenpFetchResponse"
+            }
+          }
+        },
+        "tags": [
+          "ThreatExposureNotificationService"
+        ]
+      }
+    },
+    "/tenp/query": {
+      "post": {
+        "operationId": "Query",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tenpQueryResponse"
+            }
+          }
+        },
+        "tags": [
+          "ThreatExposureNotificationService"
+        ]
+      }
+    },
+    "/tenp/revoke": {
+      "post": {
+        "operationId": "Revoke",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "tags": [
+          "ThreatExposureNotificationService"
+        ]
+      }
+    },
+    "/tenp/upload": {
+      "post": {
+        "operationId": "Upload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tenpUploadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThreatExposureNotificationService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "tenpDiagnosis": {
+      "type": "object",
+      "properties": {
+        "threat": {
+          "type": "string",
+          "description": "REQUIRED.  A URI of a threat that has been diagnosed, as\nspecified inSection 4."
+        },
+        "diagnosed": {
+          "type": "string",
+          "description": "REQUIRED.  The time when the diagnosis was made formatted as\nspecified in [RFC3339] with no time zone offset."
+        }
+      }
+    },
+    "tenpFetchResponse": {
+      "type": "object",
+      "properties": {
+        "key_type": {
+          "type": "string",
+          "description": "REQUIRED. A URI of a key type."
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. An array of strings representing the diagnosis keys\nfor that key type."
+        },
+        "before": {
+          "type": "string",
+          "description": "REQUIRED. The time of the most recent upload across all diagnosis keys\nconsidered. This MAY be used in subsequent fetch requests to page through results."
+        },
+        "after": {
+          "type": "string",
+          "description": "OPTIONAL. The time of the the oldest upload across all diagnosis keys considered."
+        },
+        "threat": {
+          "type": "string",
+          "description": "REQUIRED.  A threat URI as defined in Section 4 specifying which\nthreat to check for exposure."
+        }
+      }
+    },
+    "tenpQueryResponse": {
+      "type": "object",
+      "properties": {
+        "key_type": {
+          "type": "string",
+          "description": "REQUIRED. A URI of a key type."
+        },
+        "exposed": {
+          "type": "boolean",
+          "format": "boolean",
+          "description": "REQUIRED. A boolean denoting whether an exposure to the threat\nhas been flagged."
+        },
+        "exposures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "OPTIONAL.  An array of days when exposures happened formatted as\nper [RFC3339] without a time component."
+        },
+        "before": {
+          "type": "string",
+          "description": "REQUIRED. The time of the most recent upload across all diagnosis\nkeys considered. This MAY be used in a subsequent query as \"after\"\nto page through results."
+        },
+        "after": {
+          "type": "string",
+          "description": "OPTIONAL. The time of the the oldest upload across all diagnosis keys\nconsidered."
+        },
+        "threat": {
+          "type": "string",
+          "description": "REQUIRED. A threat URI as defined in Section 4 specifying which threat to\ncheck for exposure."
+        },
+        "message": {
+          "type": "string",
+          "description": "A human-readable message to be displayed to the user."
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tenpWebLink"
+          },
+          "description": "A list of WebLinks [RFC8288] for more information."
+        }
+      }
+    },
+    "tenpUploadRequest": {
+      "type": "object",
+      "properties": {
+        "key_type": {
+          "type": "string",
+          "description": "REQUIRED. A URI of a key type."
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "REQUIRED. An array of strings representing the diagnosis keys\nfor that key type."
+        },
+        "diagnosis": {
+          "$ref": "#/definitions/tenpDiagnosis",
+          "description": "REQUIRED.  An object providing information about the diagnosis of\na threat."
+        },
+        "assertions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "OPTIONAL.  An object providing additional assertions related to\nthe upload, diagnosis, individual or scope.  The key is an\nAssertion defined as perSection 5.  The client MUST ignore any\nassertions it does not recognize."
+        }
+      }
+    },
+    "tenpWebLink": {
+      "type": "object",
+      "properties": {
+        "rel": {
+          "type": "string",
+          "title": "The value of the \"rel\" member is a string that is either a URI or a\nregistered relation type [8] (see RFC 5988 [4])"
+        },
+        "type": {
+          "type": "string",
+          "description": "The value of the \"type\" member is a string that indicates the media\ntype [9] of the target resource (see RFC 6838 [10])."
+        },
+        "href": {
+          "type": "string",
+          "description": "The value of the \"href\" member is a string that contains a URI\npointing to the target resource."
+        },
+        "titles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "The \"titles\" object comprises zero or more name/value pairs whose\nnames are a language tag [11] or the string \"und\""
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The \"properties\" object within the link relation object comprises\nzero or more name/value pairs whose names are URIs (referred to as\n\"property identifiers\") and whose values are strings or null."
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "externalDocs": {
+    "description": "More about Switchbit",
+    "url": "https://docs.switchbit.com/"
+  }
+}

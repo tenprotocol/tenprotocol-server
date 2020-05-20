@@ -1,0 +1,297 @@
+syntax = "proto3";
+
+package tenp;
+
+import "lib/google/api/annotations.proto";
+import "lib/google/protobuf/empty.proto";
+import "lib/protoc-gen-swagger/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+    info: {
+        title: "tenprotocol-server: Threat Exposure Notification";
+
+version: "1.0";
+
+contact: {
+name: "Switchbit";
+url: "https://www.switchbit.com/";
+email: "api@switchbit.com";
+};
+};
+
+host: "cdn.b10s.io";
+
+external_docs: {
+url: "https://docs.switchbit.com/";
+description: "More about Switchbit";
+}
+
+schemes: HTTPS;
+
+consumes: "application/json";
+produces: "application/json";
+
+security_definitions: {
+security: {
+key: "BearerAuth";
+value: {
+type: TYPE_API_KEY;
+in: IN_HEADER;
+name: "Authorization";
+}
+}
+}
+
+security: {
+security_requirement: {
+key: "BearerAuth";
+value: {};
+}
+}
+};
+
+// /.well-known/threat-exposure-configuration
+message ConfigurationDocument {
+    // REQUIRED.  Boolean value indicating whether the server supports
+    // the Query operation.
+    bool supports_query = 1;
+
+    // RECOMMENDED.  URL of the server's Query endpoint.
+    string query_endpoint = 2;
+
+    // REQUIRED.  Boolean value indicating whether the server supports
+    // the Upload operation.
+    bool supports_upload = 3;
+
+    // RECOMMENDED.  URL of the server's Fetch endpoint.
+    string upload_endpoint = 4;
+
+    // REQUIRED.  Boolean value indicating whether the server supports
+    // the Fetch operation.
+    bool supports_fetch = 5;
+
+    // RECOMMENDED.  URL of the server's Query endpoint.
+    string fetch_endpoint = 6;
+
+    // REQUIRED.  Boolean value indicating whether the server supports
+    // the Revoke operation.
+    bool supports_revoke = 7;
+
+    // RECOMMENDED.  URL of the server's Revoke endpoint.
+    string revoke_endpoint = 8;
+
+    // REQUIRED.  An array of strings of the threats the server supports.
+    repeated string threats_supported = 9;
+
+    // REQUIRED.  An array of strings of the keys the server supports.
+    repeated string keys_supported = 10;
+
+    // RECOMMENDED.  An array of strings of the Assertions the server
+    // supports.
+    repeated string assertions_supported = 11;
+}
+
+message Diagnosis {
+    // REQUIRED.  A URI of a threat that has been diagnosed, as
+    // specified inSection 4.
+    string threat = 1;
+
+    // REQUIRED.  The time when the diagnosis was made formatted as
+    // specified in [RFC3339] with no time zone offset.
+    string diagnosed = 2;
+}
+
+message UploadRequest {
+    // REQUIRED. A URI of a key type.
+    string key_type = 1;
+
+    // REQUIRED. An array of strings representing the diagnosis keys
+    // for that key type.
+    repeated string keys = 2;
+
+    // REQUIRED.  An object providing information about the diagnosis of
+    // a threat.
+    Diagnosis diagnosis = 3;
+
+    // OPTIONAL.  An object providing additional assertions related to
+    // the upload, diagnosis, individual or scope.  The key is an
+    // Assertion defined as perSection 5.  The client MUST ignore any
+    // assertions it does not recognize.
+    map<string, string> assertions = 4;
+}
+
+message QueryRequest {
+    // REQUIRED. A URI of a key type.
+    string key_type = 1;
+
+    // REQUIRED. An array of strings representing the potential exposure
+    // keys for that key type.
+    repeated string keys = 2;
+
+    // OPTIONAL. A time to search for diagnosis keys uploaded up to and before,
+    // formatted as specified in [RFC3339] with no time zone offset. If omitted,
+    // the server SHOULD use latest. Searches SHOULD be done inclusive of this time.
+    string before = 3;
+
+    // OPTIONAL. A time to search for diagnosis keys uploaded after,
+    // formatted as specified in [RFC3339] with no time zone offset. If omitted,
+    // the server SHOULD provide a reasonable default based on the specified threats.
+    // Searches SHOULD be done exclusive of this time.
+    string after = 4;
+
+    // REQUIRED.  A threat URI as defined in Section 4, specifying which
+    // threat to check for exposure.
+    string threat = 5;
+
+    // OPTIONAL.  An object providing additional assertions related to
+    // the upload, diagnosis, individual or scope.  The key is an
+    // Assertion defined as perSection 5.  The client MUST ignore any
+    // assertions it does not recognize.
+    map<string, string> assertions  = 6;
+}
+
+message WebLink {
+    // The value of the "rel" member is a string that is either a URI or a
+    // registered relation type [8] (see RFC 5988 [4])
+    string rel = 1;
+
+    // The value of the "type" member is a string that indicates the media
+    // type [9] of the target resource (see RFC 6838 [10]).
+    string type = 2;
+
+    // The value of the "href" member is a string that contains a URI
+    // pointing to the target resource.
+    string href = 3;
+
+    // The "titles" object comprises zero or more name/value pairs whose
+    // names are a language tag [11] or the string "und"
+    map<string, string> titles = 4;
+
+    // The "properties" object within the link relation object comprises
+    // zero or more name/value pairs whose names are URIs (referred to as
+    // "property identifiers") and whose values are strings or null.
+    map<string, string> properties = 5;
+}
+
+message QueryResponse {
+    // REQUIRED. A URI of a key type.
+    string key_type = 1;
+
+    // REQUIRED. A boolean denoting whether an exposure to the threat
+    // has been flagged.
+    bool exposed = 2;
+
+    // OPTIONAL.  An array of days when exposures happened formatted as
+    // per [RFC3339] without a time component.
+    repeated string exposures = 3;
+
+    // REQUIRED. The time of the most recent upload across all diagnosis
+    // keys considered. This MAY be used in a subsequent query as "after"
+    // to page through results.
+    string before = 4;
+
+    // OPTIONAL. The time of the the oldest upload across all diagnosis keys
+    // considered.
+    string after = 5;
+
+    // REQUIRED. A threat URI as defined in Section 4 specifying which threat to
+    // check for exposure.
+    string threat = 6;
+
+    // A human-readable message to be displayed to the user.
+    string message = 7;
+
+    // A list of WebLinks [RFC8288] for more information.
+    repeated WebLink links = 8;
+}
+
+message FetchRequest {
+    // REQUIRED.  A URI for the requested key type.
+    string key_type = 1;
+
+    // OPTIONAL.  A date to search for exposures before, formatted as
+    // specified in [RFC3339] with no time zone offset. If omitted,
+    // the server SHOULD use latest. Searches SHOULD be done inclusive
+    // of this time.
+    string before = 2;
+
+    // OPTIONAL.  A date to search for exposures after, formatted as
+    // specified in [RFC3339] with no time zone offset.  If omitted, the
+    // server SHOULD provide a reasonable default based on the specified
+    // threats. Searches SHOULD be done exclusive of this time.
+    string after = 3;
+
+    // REQUIRED.  A threat URI as defined in Section 4 specifying which
+    // threat to check for exposure.
+    string threat = 4;
+
+    // OPTIONAL.  An object providing additional assertions related to
+    // the upload, diagnosis, individual or scope.  The key is an
+    // Assertion defined as per Section 5.  The client MUST ignore any
+    // assertions it does not recognize.
+    map<string, string> assertions = 5;
+}
+
+message FetchResponse {
+
+    // REQUIRED. A URI of a key type.
+    string key_type = 1;
+
+    // REQUIRED. An array of strings representing the diagnosis keys
+    // for that key type.
+    repeated string keys = 2;
+
+    // REQUIRED. The time of the most recent upload across all diagnosis keys
+    // considered. This MAY be used in subsequent fetch requests to page through results.
+    string before = 3;
+
+    // OPTIONAL. The time of the the oldest upload across all diagnosis keys considered.
+    string after = 4;
+
+    // REQUIRED.  A threat URI as defined in Section 4 specifying which
+    // threat to check for exposure.
+    string threat = 5;
+}
+
+message RevokeRequest {
+
+    // REQUIRED. A URI of a key type.
+    string key_type = 1;
+
+    // REQUIRED. An array of strings representing the diagnosis keys
+    // for that key type.
+    repeated string keys = 2;
+
+    // OPTIONAL.  An object providing additional assertions related to
+    // the upload, diagnosis, individual or scope.  The key is an
+    // Assertion defined as per Section 5.  The client MUST ignore any
+    // assertions it does not recognize.
+    map<string, string> assertions = 3;
+}
+
+service ThreatExposureNotificationService {
+    rpc Upload (UploadRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/tenp/upload"
+            body: "*"
+        };
+    }
+
+    rpc Query (QueryRequest) returns (QueryResponse) {
+        option (google.api.http) = {
+            post: "/tenp/query"
+        };
+    }
+
+    rpc Fetch (FetchRequest) returns (FetchResponse) {
+        option (google.api.http) = {
+            post: "/tenp/fetch"
+        };
+    }
+
+    rpc Revoke (RevokeRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/tenp/revoke"
+        };
+    }
+}
