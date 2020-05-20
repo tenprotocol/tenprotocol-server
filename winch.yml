@@ -1,6 +1,6 @@
 name: tenprotocol-server
 description: Reference implementation of the Threat Exposure Notification Protocol (10p).
-repository: https://github.com/switch-bit/tenprotocol-server
+repository: https://github.com/tenprotocol/tenprotocol-server
 verbose: true
 assets:
 - filename: swagger/swagger_gen.go
@@ -19,9 +19,9 @@ dockerfile:
 dockers:
   - dockerfile: Dockerfile
     server: docker.pkg.github.com
-    organization: switch-bit
+    organization: tenprotocol
     repository: tenprotocol-server/tenprotocol-server
-    username: switch-bit
+    username: tenprotocol
     password: ${GITHUB_TOKEN}
     branches:
       only: master
@@ -29,4 +29,3 @@ environment:
   GO111MODULE: on
   CGO_ENABLED: "0"
   GOOS: linux
-  GOPRIVATE: "github.com/switch-bit"

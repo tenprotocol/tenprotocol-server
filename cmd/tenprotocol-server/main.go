@@ -18,7 +18,8 @@ func main() {
 		}
 		return orlop.Serve(ctx, version.Name,
 			orlop.WithServerConfig(cfg.Server),
-			orlop.WithTLSProvider(orlop.NewVaultTLSProvider(cfg.Vault)),
+			orlop.WithVault(cfg.Vault),
+			orlop.WithAuthentication(s.Authenticate),
 			orlop.WithSwagger(swagger.FS),
 			orlop.WithGRPCServices(func(ctx context.Context, g *grpc.Server) {
 				tenp.RegisterThreatExposureNotificationServiceServer(g, s)
